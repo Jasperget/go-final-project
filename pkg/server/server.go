@@ -1,34 +1,36 @@
 package server
 
 import (
+	"go-final-project/pkg/api"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"runtime"
 )
 
-const defaultPort = "7540"
-
-// Run запускает веб-сервер
+// Run создает маршрутизатор, инициализирует все маршруты и запускает сервер.
 func Run() {
+	// Создаем новый мультиплексор (маршрутизатор).
+	// Использование собственного мультиплексора вместо глобального http.DefaultServeMux - лучшая практика.
+	mux := http.NewServeMux()
+
+	// Регистрируем обработчики API, передавая им наш маршрутизатор.
+	api.Init(mux)
+
+	// Настраиваем обработку статических файлов.
+	fileServer := http.FileServer(http.Dir("./web"))
+	// Регистрируем обработчик для всех путей, которые не были перехвачены API.
+	// ServeMux в Go сначала ищет более точные совпадения (например, "/api/tasks"),
+	// и только если не находит, использует более общие ("/").
+	// Это гарантирует, что запросы к API не будут перехвачены файловым сервером.
+	mux.Handle("/", fileServer)
+
 	port := os.Getenv("TODO_PORT")
 	if port == "" {
-		port = defaultPort
+		port = "7540"
 	}
 
-	// Определяем путь к корневой директории проекта
-	_, b, _, _ := runtime.Caller(0)
-	root := filepath.Join(filepath.Dir(b), "../..") // Поднимаемся на два уровня вверх из pkg/server
-
-	// Указываем путь к директории web
-	webDir := http.Dir(filepath.Join(root, "web"))
-
-	http.Handle("/", http.FileServer(webDir))
-
 	log.Printf("Сервер запущен на порту %s", port)
-	log.Printf("Для доступа используйте http://localhost:%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("не удалось запустить сервер: %s\n", err)
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
+		log.Fatalf("не удалось запустить сервер: %s", err)
 	}
 }
