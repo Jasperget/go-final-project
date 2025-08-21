@@ -5,23 +5,23 @@ import (
 	"net/http"
 )
 
+// tasksRequestLimit определяет максимальное количество задач, возвращаемых в одном запросе.
+const tasksRequestLimit = 50
+
 // tasksResponse — это структура для ответа JSON со списком задач.
 type tasksResponse struct {
 	Tasks []db.Task `json:"tasks"`
 }
 
-// tasksHandler обрабатывает GET-запросы на получение списка задач.
-func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	// Получаем параметр поиска из URL
+// tasksHandler теперь является методом *API.
+func (api *API) tasksHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 
-	// Получаем задачи из БД с учетом поиска, ограничивая выборку 50 записями.
-	tasks, err := db.Tasks(50, search)
+	tasks, err := api.storage.Tasks(tasksRequestLimit, search)
 	if err != nil {
-		writeError(w, "не удалось получить задачи: "+err.Error(), http.StatusInternalServerError)
+		api.writeError(w, "не удалось получить задачи: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Отправляем успешный ответ со списком задач.
-	writeJSON(w, tasksResponse{Tasks: tasks}, http.StatusOK)
+	api.writeJSON(w, tasksResponse{Tasks: tasks}, http.StatusOK)
 }

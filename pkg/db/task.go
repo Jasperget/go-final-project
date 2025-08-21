@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"go-final-project/pkg/dates" // Импортируем новый пакет
+	"go-final-project/pkg/dates"
 	"time"
 )
 
@@ -15,9 +15,8 @@ type Task struct {
 	Repeat  string `json:"repeat"`
 }
 
-// Tasks возвращает список задач, отсортированных по дате.
-// Поддерживает поиск по дате (формат 02.01.2006) или по тексту в заголовке/комментарии.
-func Tasks(limit int, search string) ([]Task, error) {
+// Tasks теперь является методом Storage.
+func (s *Storage) Tasks(limit int, search string) ([]Task, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -27,16 +26,16 @@ func Tasks(limit int, search string) ([]Task, error) {
 		// Поиск по дате
 		dateStr := t.Format(dates.LayoutDB) // Используем константу
 		query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?`
-		rows, err = DB.Query(query, dateStr, limit)
+		rows, err = s.db.Query(query, dateStr, limit)
 	} else if search != "" {
 		// Поиск по тексту
 		searchPattern := "%" + search + "%"
 		query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE title LIKE ? OR comment LIKE ? ORDER BY date LIMIT ?`
-		rows, err = DB.Query(query, searchPattern, searchPattern, limit)
+		rows, err = s.db.Query(query, searchPattern, searchPattern, limit)
 	} else {
 		// Нет поиска, получаем все задачи
 		query := `SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
-		rows, err = DB.Query(query, limit)
+		rows, err = s.db.Query(query, limit)
 	}
 
 	if err != nil {
@@ -67,22 +66,22 @@ func Tasks(limit int, search string) ([]Task, error) {
 	return tasks, nil
 }
 
-// GetTask возвращает задачу по её ID.
-func GetTask(id string) (*Task, error) {
+// GetTask теперь является методом Storage.
+func (s *Storage) GetTask(id string) (*Task, error) {
 	var t Task
 	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
 	// QueryRow ожидает ровно одну строку. Если задача не найдена, вернется ошибка sql.ErrNoRows.
-	err := DB.QueryRow(query, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+	err := s.db.QueryRow(query, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
 		return nil, err
 	}
 	return &t, nil
 }
 
-// UpdateTask обновляет задачу в базе данных.
-func UpdateTask(task Task) error {
+// UpdateTask теперь является методом Storage.
+func (s *Storage) UpdateTask(task Task) error {
 	query := `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
-	res, err := DB.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	res, err := s.db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
 	if err != nil {
 		return err
 	}
@@ -98,10 +97,10 @@ func UpdateTask(task Task) error {
 	return nil
 }
 
-// UpdateDate обновляет только дату задачи по её ID.
-func UpdateDate(id, newDate string) error {
+// UpdateDate теперь является методом Storage.
+func (s *Storage) UpdateDate(id, newDate string) error {
 	query := `UPDATE scheduler SET date = ? WHERE id = ?`
-	res, err := DB.Exec(query, newDate, id)
+	res, err := s.db.Exec(query, newDate, id)
 	if err != nil {
 		return err
 	}
@@ -115,10 +114,10 @@ func UpdateDate(id, newDate string) error {
 	return nil
 }
 
-// DeleteTask удаляет задачу из базы данных по её ID.
-func DeleteTask(id string) error {
+// DeleteTask теперь является методом Storage.
+func (s *Storage) DeleteTask(id string) error {
 	query := `DELETE FROM scheduler WHERE id = ?`
-	res, err := DB.Exec(query, id)
+	res, err := s.db.Exec(query, id)
 	if err != nil {
 		return err
 	}
