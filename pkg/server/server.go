@@ -2,9 +2,9 @@ package server
 
 import (
 	"go-final-project/pkg/api"
+	"go-final-project/pkg/config" // Импортируем пакет config
 	"log"
 	"net/http"
-	"os"
 )
 
 // Run создает маршрутизатор, инициализирует все маршруты и запускает сервер.
@@ -24,10 +24,8 @@ func Run() {
 	// Это гарантирует, что запросы к API не будут перехвачены файловым сервером.
 	mux.Handle("/", fileServer)
 
-	port := os.Getenv("TODO_PORT")
-	if port == "" {
-		port = "7540"
-	}
+	// Используем порт из загруженной конфигурации
+	port := config.Get().Port
 
 	log.Printf("Сервер запущен на порту %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {

@@ -1,40 +1,36 @@
 package main
 
 import (
+	"go-final-project/pkg/config" // Импортируем новый пакет
 	"go-final-project/pkg/db"
 	"go-final-project/pkg/server"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv" // Импортируем новую библиотеку
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	// Загружаем переменные из .env файла.
-	// Это нужно сделать в самом начале, до того как другие части программы их используют.
 	if err := godotenv.Load(); err != nil {
-		// Если файла .env нет, это не ошибка, просто выводим сообщение.
-		// Приложение будет использовать переменные, установленные в системе.
 		log.Println("Файл .env не найден, используются системные переменные окружения")
 	}
 
-	dbFile := os.Getenv("TODO_DBFILE")
-	if dbFile == "" {
-		dbFile = "scheduler.db"
+	// Считываем конфигурацию ОДИН РАЗ при старте приложения.
+	if err := config.Load(); err != nil {
+		log.Fatalf("ошибка загрузки конфигурации: %s", err)
 	}
+	cfg := config.Get()
 
-	// Инициализируем БД.
-	if err := db.Init(dbFile); err != nil {
+	// Инициализируем БД, используя значение из конфигурации.
+	if err := db.Init(cfg.DBFile); err != nil {
 		log.Fatalf("не удалось инициализировать базу данных: %s", err)
 	}
-	// Добавляем defer для закрытия соединения с БД перед выходом из main.
-	// Это гарантирует, что соединение будет закрыто корректно при завершении работы.
 	defer func() {
 		if err := db.DB.Close(); err != nil {
 			log.Printf("Ошибка при закрытии соединения с БД: %v", err)
 		}
 	}()
 
-	// Запускаем сервер. Вся логика маршрутизации и запуска инкапсулирована в пакете server.
+	// Запускаем сервер.
 	server.Run()
 }

@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"go-final-project/pkg/auth"
+	"go-final-project/pkg/config" // Импортируем пакет config
 	"net/http"
-	"os"
 )
 
 // signInHandler обрабатывает POST-запрос на аутентификацию.
@@ -14,7 +14,8 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storedPassword := os.Getenv("TODO_PASSWORD")
+	// Используем пароль из загруженной конфигурации
+	storedPassword := config.Get().Password
 	if storedPassword == "" {
 		writeError(w, "аутентификация не включена на сервере", http.StatusInternalServerError)
 		return
@@ -46,7 +47,8 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 // authMiddleware проверяет аутентификацию для защищенных маршрутов.
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		password := os.Getenv("TODO_PASSWORD")
+		// Используем пароль из загруженной конфигурации
+		password := config.Get().Password
 		if password == "" {
 			// Если пароль не установлен, аутентификация не требуется, пропускаем дальше
 			next.ServeHTTP(w, r)
