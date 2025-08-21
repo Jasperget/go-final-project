@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"go-final-project/pkg/db"
 	"net/http"
 	"strconv"
@@ -39,10 +40,10 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		taskDate = now
 	} else {
 		// Сначала пытаемся разобрать формат от браузера (DD.MM.YYYY)
-		taskDate, err = time.Parse("02.01.2006", payload.Date)
+		taskDate, err = time.Parse(dates.LayoutUser, payload.Date)
 		if err != nil {
 			// Если не вышло, пытаемся разобрать формат для тестов (YYYYMMDD)
-			taskDate, err = time.Parse(DateFormat, payload.Date)
+			taskDate, err = time.Parse(dates.LayoutDB, payload.Date)
 			if err != nil {
 				writeError(w, "неверный формат даты, ожидается DD.MM.YYYY или YYYYMMDD", http.StatusBadRequest)
 				return
@@ -50,7 +51,7 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Преобразуем дату в формат для хранения в БД (YYYYMMDD)
-	payload.Date = taskDate.Format(DateFormat)
+	payload.Date = taskDate.Format(dates.LayoutDB)
 
 	// 3. Обработка правила повторения и даты
 	if payload.Repeat != "" {
@@ -68,7 +69,7 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Если правила повторения нет, а дата в прошлом, используем сегодняшнюю дату
 		if taskDate.Before(now.Truncate(24 * time.Hour)) {
-			payload.Date = now.Format(DateFormat)
+			payload.Date = now.Format(dates.LayoutDB)
 		}
 	}
 

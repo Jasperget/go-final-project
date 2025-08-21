@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"go-final-project/pkg/db"
 	"net/http"
 	"time"
@@ -39,7 +40,7 @@ func doneTaskHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		taskDate, err := time.Parse(DateFormat, task.Date)
+		taskDate, err := time.Parse(dates.LayoutDB, task.Date)
 		if err != nil {
 			writeError(w, "не удалось разобрать текущую дату задачи: "+err.Error(), http.StatusInternalServerError)
 			return

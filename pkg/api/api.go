@@ -1,6 +1,7 @@
 package api
 
 import (
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"net/http"
 	"time"
 )
@@ -46,7 +47,7 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 	if nowStr == "" {
 		now = time.Now()
 	} else {
-		now, err = time.Parse(DateFormat, nowStr)
+		now, err = time.Parse(dates.LayoutDB, nowStr)
 		if err != nil {
 			http.Error(w, "неверный формат параметра 'now'", http.StatusBadRequest)
 			return

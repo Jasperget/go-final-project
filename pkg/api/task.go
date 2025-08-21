@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"go-final-project/pkg/db"
 	"net/http"
 	"time"
@@ -51,10 +52,10 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		taskDate = now
 	} else {
 		// Сначала пытаемся разобрать формат от браузера (DD.MM.YYYY)
-		taskDate, err = time.Parse("02.01.2006", task.Date)
+		taskDate, err = time.Parse(dates.LayoutUser, task.Date)
 		if err != nil {
 			// Если не вышло, пытаемся разобрать формат для тестов (YYYYMMDD)
-			taskDate, err = time.Parse(DateFormat, task.Date)
+			taskDate, err = time.Parse(dates.LayoutDB, task.Date)
 			if err != nil {
 				writeError(w, "неверный формат даты, ожидается DD.MM.YYYY или YYYYMMDD", http.StatusBadRequest)
 				return
@@ -62,7 +63,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Преобразуем дату в формат для хранения в БД (YYYYMMDD)
-	task.Date = taskDate.Format(DateFormat)
+	task.Date = taskDate.Format(dates.LayoutDB)
 
 	if task.Repeat != "" {
 		nextDateStr, err := NextDate(now, task.Date, task.Repeat)
@@ -75,7 +76,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if taskDate.Before(now.Truncate(24 * time.Hour)) {
-			task.Date = now.Format(DateFormat)
+			task.Date = now.Format(dates.LayoutDB)
 		}
 	}
 

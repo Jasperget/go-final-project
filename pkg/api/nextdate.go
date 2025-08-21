@@ -2,14 +2,12 @@ package api
 
 import (
 	"fmt"
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
-
-// DateFormat - это константа для формата даты, используемого во всем API.
-const DateFormat = "20060102"
 
 // NextDate вычисляет следующую дату на основе правила повторения.
 func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
@@ -17,7 +15,7 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 		return "", fmt.Errorf("правило повторения не может быть пустым для вычисления")
 	}
 
-	startDate, err := time.Parse(DateFormat, dateStr)
+	startDate, err := time.Parse(dates.LayoutDB, dateStr)
 	if err != nil {
 		return "", fmt.Errorf("неверный формат даты: %w", err)
 	}
@@ -90,7 +88,7 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 
 		// Если полученная дата оказалась после точки отсчета 'now', то мы нашли то, что нужно.
 		if next.After(now) {
-			return next.Format(DateFormat), nil
+			return next.Format(dates.LayoutDB), nil
 		}
 	}
 }

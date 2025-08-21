@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"go-final-project/pkg/dates" // Импортируем новый пакет
 	"time"
 )
 
@@ -21,10 +22,10 @@ func Tasks(limit int, search string) ([]Task, error) {
 	var err error
 
 	// Проверяем, является ли строка поиска датой в формате "DD.MM.YYYY"
-	t, err := time.Parse("02.01.2006", search)
+	t, err := time.Parse(dates.LayoutUser, search)
 	if err == nil {
 		// Поиск по дате
-		dateStr := t.Format("20060102") // Преобразуем в формат БД
+		dateStr := t.Format(dates.LayoutDB) // Используем константу
 		query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE date = ? ORDER BY date LIMIT ?`
 		rows, err = DB.Query(query, dateStr, limit)
 	} else if search != "" {
