@@ -1,33 +1,32 @@
-name: Go
+name: Go CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        go-version: [1.24.x]
-  
+        go-version: ['1.24.x']
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
-        
-    - name: Display Go version
-      run: go version
+        go-version: ${{ matrix.go-version }}
 
     - name: Install dependencies
-      run: go mod tidy
+      run: go mod download
 
-    - name: Run local server
+    - name: Run tests
       run: |
-        CGO_ENABLED=0 GOOS=linux go run main.go &
-        sleep 100
-        go test -run ^TestApp$ ./tests
-        
-        
+        # Запускаем сервер в фоновом режиме. Обратите внимание на правильный путь!
+        go run ./cmd/main.go &
+        timeout 30s bash -c 'until curl -s http://localhost:7540 > /dev/null; do echo "Waiting for server..."; sleep 1; done'
+
+        # Запускаем все тесты
+        go test -v ./tests
+
